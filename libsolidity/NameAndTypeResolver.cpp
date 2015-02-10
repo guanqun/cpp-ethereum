@@ -118,7 +118,9 @@ void NameAndTypeResolver::linearizeBaseContracts(ContractDefinition& _contract) 
 {
 	// order in the lists is from derived to base
 	// list of lists to linearize, the last element is the list of direct bases
-	list<list<ContractDefinition const*>> input(1, {});
+	list<list<ContractDefinition const*>> input;
+	list<ContractDefinition const*> temp;
+    input.push_back(temp);
 	for (ASTPointer<InheritanceSpecifier> const& baseSpecifier: _contract.getBaseContracts())
 	{
 		ASTPointer<Identifier> baseName = baseSpecifier->getName();
@@ -276,7 +278,7 @@ void DeclarationRegistrationHelper::enterNewSubScope(Declaration const& _declara
 {
 	map<ASTNode const*, DeclarationContainer>::iterator iter;
 	bool newlyAdded;
-	tie(iter, newlyAdded) = m_scopes.emplace(&_declaration, DeclarationContainer(m_currentScope, &m_scopes[m_currentScope]));
+	tie(iter, newlyAdded) = m_scopes.insert(make_pair(&_declaration, DeclarationContainer(m_currentScope, &m_scopes[m_currentScope])));
 	solAssert(newlyAdded, "Unable to add new scope.");
 	m_currentScope = &_declaration;
 }

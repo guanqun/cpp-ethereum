@@ -19,6 +19,8 @@ if (APPLE OR UNIX)
 	else()
 		add_library(${EXECUTABLE} SHARED ${EXECUTABLE}.c field_5x52_asm.asm)
 	endif()
+    include_directories(${GMP_INCLUDE_DIRS})
+
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -DUSE_FIELD_GMP -DUSE_NUM_GMP -DUSE_FIELD_INV_NUM")
 	target_link_libraries(${EXECUTABLE} ${GMP_LIBRARIES})
 else()

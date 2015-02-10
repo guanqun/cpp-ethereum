@@ -3,7 +3,7 @@
 # C++11 check and activation
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
 
-	set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Wno-unknown-pragmas -Wextra -DSHAREDLIB -fPIC")
+	set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Wno-unknown-pragmas -Wextra -DSHAREDLIB -fPIC -O0 -g -DETH_DEBUG")
 	set(CMAKE_CXX_FLAGS_DEBUG          "-O0 -g -DETH_DEBUG")
 	set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG -DETH_RELEASE")
 	set(CMAKE_CXX_FLAGS_RELEASE        "-O3 -DNDEBUG -DETH_RELEASE")
@@ -14,6 +14,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
 		COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
 	if (NOT (GCC_VERSION VERSION_GREATER 4.7 OR GCC_VERSION VERSION_EQUAL 4.7))
 		message(FATAL_ERROR "${PROJECT_NAME} requires g++ 4.7 or greater.")
+	endif ()
+	if (GCC_VERSION VERSION_LESS 4.7.2 OR GCC_VERSION VERSION_EQUAL 4.7.2)
+		add_compile_options(-D_GLIBCXX_USE_NANOSLEEP)
 	endif ()
 
 elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
