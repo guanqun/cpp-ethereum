@@ -73,6 +73,7 @@ class MemberAccess;
 class IndexAccess;
 class PrimaryExpression;
 class Identifier;
+class FunctionIdentifier;
 class ElementaryTypeNameExpression;
 class Literal;
 

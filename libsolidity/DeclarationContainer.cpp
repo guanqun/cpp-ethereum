@@ -22,6 +22,7 @@
 
 #include <libsolidity/DeclarationContainer.h>
 #include <libsolidity/AST.h>
+#include <libsolidity/Types.h>
 
 namespace dev
 {
@@ -33,21 +34,31 @@ bool DeclarationContainer::registerDeclaration(Declaration const& _declaration, 
 	if (_declaration.getName().empty())
 		return true;
 
-	if (!_update && m_declarations.find(_declaration.getName()) != m_declarations.end())
+	// auto declarations = resolveName(_declaration.getName(), true);
+	// std::set<Type::Category> categories;
+	// for (auto const* delcartion : declarations)
+	// 	categories.insert(declaration->getType()->getCategory());
+	// if (categories.size() > 1)
+
+	// TODO: check the _update = false case
+	if (!_update && m_declarations.count(_declaration.getName()) != 0)
 		return false;
-	m_declarations[_declaration.getName()] = &_declaration;
+	m_declarations.emplace(_declaration.getName(), &_declaration);
 	return true;
 }
 
-Declaration const* DeclarationContainer::resolveName(ASTString const& _name, bool _recursive) const
+std::vector<Declaration const*> DeclarationContainer::resolveName(ASTString const& _name, bool _recursive) const
 {
 	solAssert(!_name.empty(), "Attempt to resolve empty name.");
-	auto result = m_declarations.find(_name);
-	if (result != m_declarations.end())
-		return result->second;
+	std::vector<Declaration const*> declarations;
+	auto range = m_declarations.equal_range(_name);
+	for (auto it = range.first; it != range.second; ++it)
+		declarations.push_back(it->second);
+	if (!declarations.empty())
+		return declarations;
 	if (_recursive && m_enclosingContainer)
 		return m_enclosingContainer->resolveName(_name, true);
-	return nullptr;
+	return declarations;
 }
 
 }

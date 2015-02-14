@@ -593,12 +593,25 @@ void IndexAccess::checkTypeRequirements()
 
 void Identifier::checkTypeRequirements()
 {
+	// how about extends it to multiple declarations.
 	solAssert(m_referencedDeclaration, "Identifier not resolved.");
 
 	m_lvalue = m_referencedDeclaration->getLValueType();
 	m_type = m_referencedDeclaration->getType(m_currentContract);
 	if (!m_type)
 		BOOST_THROW_EXCEPTION(createTypeError("Declaration referenced before type could be determined."));
+}
+
+void FunctionIdentifier::checkTypeRequirements()
+{
+	// TODO:
+	// how about extends it to multiple declarations.
+	// solAssert(m_referencedDeclaration, "Identifier not resolved.");
+
+	// m_lvalue = m_referencedDeclaration->getLValueType();
+	// m_type = m_referencedDeclaration->getType(m_currentContract);
+	// if (!m_type)
+	// 	BOOST_THROW_EXCEPTION(createTypeError("Declaration referenced before type could be determined."));
 }
 
 void ElementaryTypeNameExpression::checkTypeRequirements()

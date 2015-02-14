@@ -682,7 +682,14 @@ ASTPointer<Expression> Parser::parseLeftHandSideExpression()
 			std::tie(arguments, names) = parseFunctionCallArguments();
 			nodeFactory.markEndPosition();
 			expectToken(Token::RParen);
-			expression = nodeFactory.createNode<FunctionCall>(expression, arguments, names);
+			if (Identifier* identifier = dynamic_cast<Identifier*>(expression.get()))
+			{
+				ASTPointer<FunctionIdentifier> functionIdentifier = make_shared<FunctionIdentifier>(identifier->getLocation(), make_shared<ASTString>(identifier->getName()));
+				expression = nodeFactory.createNode<FunctionCall>(functionIdentifier, arguments, names);
+				functionIdentifier->setFunctionCall(functionIdentifier);
+			}
+			else
+				expression = nodeFactory.createNode<FunctionCall>(expression, arguments, names);
 		}
 		break;
 		default:

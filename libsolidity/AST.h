@@ -1078,7 +1078,7 @@ public:
 	Declaration const* getReferencedDeclaration() const { return m_referencedDeclaration; }
 	ContractDefinition const* getCurrentContract() const { return m_currentContract; }
 
-private:
+protected:
 	ASTPointer<ASTString> m_name;
 
 	/// Declaration the name refers to.
@@ -1086,6 +1086,28 @@ private:
 	/// Stores a reference to the current contract. This is needed because types of base contracts
 	/// change depending on the context.
 	ContractDefinition const* m_currentContract = nullptr;
+};
+
+class FunctionIdentifier: public Identifier
+{
+public:
+	FunctionIdentifier(Location const& _location, ASTPointer<ASTString> const& _name):
+		Identifier(_location, _name) {}
+	virtual void accept(ASTVisitor& _visitor) override;
+	virtual void accept(ASTConstVisitor& _visitor) const override;
+	virtual void checkTypeRequirements() override;
+
+	void setFunctionCall(ASTPointer<FunctionCall> const& _functionCall) { m_functionCall = _functionCall; }
+	FunctionCall const& getFunctionCall() const { return *m_functionCall; }
+
+	void setOverloadedDeclarations(std::vector<Declaration const*> const& _declarations) { m_overloadedDeclarations = _declarations; }
+	std::vector<Declaration const*> getOverloadedDeclarations() const { return m_overloadedDeclarations; }
+
+private:
+	/// Declarations the name refers to.
+	std::vector<Declaration const*> m_overloadedDeclarations;
+
+	ASTPointer<FunctionCall> m_functionCall;
 };
 
 /**
