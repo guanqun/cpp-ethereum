@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(double_function_declaration)
 					   "  function fun() { var x; }\n"
 					   "  function fun() { var x; }\n"
 					   "}\n";
-	BOOST_CHECK_THROW(parseTextAndResolveNames(text), DeclarationError);
+	BOOST_CHECK_THROW(parseTextAndResolveNames(text), TypeError);
 }
 
 BOOST_AUTO_TEST_CASE(double_variable_declaration)
@@ -448,23 +448,25 @@ BOOST_AUTO_TEST_CASE(cyclic_inheritance)
 	BOOST_CHECK_THROW(parseTextAndResolveNames(text), TypeError);
 }
 
-BOOST_AUTO_TEST_CASE(illegal_override_direct)
+// TODO: add an end to end test
+BOOST_AUTO_TEST_CASE(legal_override_direct)
 {
 	char const* text = R"(
 		contract B { function f() {} }
 		contract C is B { function f(uint i) {} }
 	)";
-	BOOST_CHECK_THROW(parseTextAndResolveNames(text), TypeError);
+	BOOST_CHECK_NO_THROW(parseTextAndResolveNames(text));
 }
 
-BOOST_AUTO_TEST_CASE(illegal_override_indirect)
+// TODO: add an end to end test
+BOOST_AUTO_TEST_CASE(legal_override_indirect)
 {
 	char const* text = R"(
 		contract A { function f(uint a) {} }
 		contract B { function f() {} }
 		contract C is A, B { }
 	)";
-	BOOST_CHECK_THROW(parseTextAndResolveNames(text), TypeError);
+	BOOST_CHECK_NO_THROW(parseTextAndResolveNames(text));
 }
 
 BOOST_AUTO_TEST_CASE(illegal_override_visibility)
@@ -989,6 +991,18 @@ BOOST_AUTO_TEST_CASE(exp_operator_exponent_too_big)
 		contract test {
 			function f() returns(uint d) { return 2 ** 10000000000; }
 		})";
+	BOOST_CHECK_THROW(parseTextAndResolveNames(sourceCode), TypeError);
+}
+
+BOOST_AUTO_TEST_CASE(overloaded_function_cannot_resolve)
+{
+	char const* sourceCode = R"(
+		contract test {
+			function f() returns(uint) { return 1; }
+			function f(uint a) returns(uint) { return a; }
+			function g() returns(uint) { return f(3, 5); }
+		}
+	)";
 	BOOST_CHECK_THROW(parseTextAndResolveNames(sourceCode), TypeError);
 }
 

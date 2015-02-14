@@ -524,19 +524,39 @@ bool ExpressionCompiler::visit(IndexAccess const& _indexAccess)
 void ExpressionCompiler::endVisit(Identifier const& _identifier)
 {
 	Declaration const* declaration = _identifier.getReferencedDeclaration();
-	if (MagicVariableDeclaration const* magicVar = dynamic_cast<MagicVariableDeclaration const*>(declaration))
+	if (FunctionDefinition const* functionDef = dynamic_cast<FunctionDefinition const*>(declaration))
+		m_context << m_context.getVirtualFunctionEntryLabel(*functionDef).pushTag();
+	else if (MagicVariableDeclaration const* magicVar = dynamic_cast<MagicVariableDeclaration const*>(declaration))
 	{
 		if (magicVar->getType()->getCategory() == Type::Category::Contract)
 			// "this" or "super"
 			if (!dynamic_cast<ContractType const&>(*magicVar->getType()).isSuper())
 				m_context << eth::Instruction::ADDRESS;
 	}
-	else if (FunctionDefinition const* functionDef = dynamic_cast<FunctionDefinition const*>(declaration))
-		m_context << m_context.getVirtualFunctionEntryLabel(*functionDef).pushTag();
 	else if (dynamic_cast<VariableDeclaration const*>(declaration))
 	{
 		m_currentLValue.fromIdentifier(_identifier, *declaration);
 		m_currentLValue.retrieveValueIfLValueNotRequested(_identifier);
+	}
+	else if (dynamic_cast<ContractDefinition const*>(declaration))
+	{
+		// no-op
+	}
+	else
+	{
+		BOOST_THROW_EXCEPTION(InternalCompilerError() << errinfo_comment("Identifier type not expected in expression context."));
+	}
+}
+
+void ExpressionCompiler::endVisit(FunctionIdentifier const& _functionIdentifier)
+{
+	Declaration const* declaration = _functionIdentifier.getReferencedDeclaration();
+	if (FunctionDefinition const* functionDef = dynamic_cast<FunctionDefinition const*>(declaration))
+		m_context << m_context.getVirtualFunctionEntryLabel(*functionDef).pushTag();
+	else if (dynamic_cast<VariableDeclaration const*>(declaration))
+	{
+		m_currentLValue.fromIdentifier(_functionIdentifier, *declaration);
+		m_currentLValue.retrieveValueIfLValueNotRequested(_functionIdentifier);
 	}
 	else if (dynamic_cast<ContractDefinition const*>(declaration))
 	{
@@ -548,8 +568,8 @@ void ExpressionCompiler::endVisit(Identifier const& _identifier)
 	}
 	else
 	{
-		BOOST_THROW_EXCEPTION(InternalCompilerError() << errinfo_comment("Identifier type not expected in expression context."));
-	}
+		BOOST_THROW_EXCEPTION(InternalCompilerError() << errinfo_comment("FunctionIdentifier type not expected in expression context."));
+	}	
 }
 
 void ExpressionCompiler::endVisit(Literal const& _literal)

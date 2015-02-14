@@ -97,8 +97,12 @@ eth::AssemblyItem CompilerContext::getVirtualFunctionEntryLabel(FunctionDefiniti
 	solAssert(!m_inheritanceHierarchy.empty(), "No inheritance hierarchy set.");
 	for (ContractDefinition const* contract: m_inheritanceHierarchy)
 		for (ASTPointer<FunctionDefinition> const& function: contract->getDefinedFunctions())
-			if (!function->isConstructor() && function->getName() == _function.getName())
+		{
+			if (!function->isConstructor() &&
+				dynamic_cast<FunctionType const*>(function->getType().get())->getCanonicalSignature() ==
+				dynamic_cast<FunctionType const*>(_function.getType().get())->getCanonicalSignature())
 				return getFunctionEntryLabel(*function);
+		}
 	solAssert(false, "Virtual function " + _function.getName() + " not found.");
 	return m_asm.newTag(); // not reached
 }

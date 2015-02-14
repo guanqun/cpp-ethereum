@@ -2254,6 +2254,51 @@ BOOST_AUTO_TEST_CASE(generic_call)
 	BOOST_CHECK_EQUAL(m_state.balance(m_contractAddress), 50 - 2);
 }
 
+BOOST_AUTO_TEST_CASE(overloaded_function_call_resolve_to_first)
+{
+	char const* sourceCode = R"(
+		contract test {
+			function f(uint k) returns(uint d) { return k; }
+			function f(uint a, uint b) returns(uint d) { return a + b; }
+			function g() returns(uint d) { return f(3); }
+		}
+	)";
+	compileAndRun(sourceCode);
+	BOOST_CHECK(callContractFunction("g()") == encodeArgs(3));
+}
+
+BOOST_AUTO_TEST_CASE(overloaded_function_call_resolve_to_second)
+{
+	char const* sourceCode = R"(
+		contract test {
+			function f(uint a, uint b) returns(uint d) { return a + b; }
+			function f(uint k) returns(uint d) { return k; }
+			function g() returns(uint d) { return f(3, 7); }
+		}
+	)";
+	compileAndRun(sourceCode);
+	BOOST_CHECK(callContractFunction("g()") == encodeArgs(10));
+}
+
+BOOST_AUTO_TEST_CASE(overloaded_function_call_with_if_else)
+{
+	char const* sourceCode = R"(
+		contract test {
+			function f(uint a, uint b) returns(uint d) { return a + b; }
+			function f(uint k) returns(uint d) { return k; }
+			function g(bool flag) returns(uint d) {
+				if (flag)
+					return f(3);
+				else
+					return f(3, 7);
+			}
+		}
+	)";
+	compileAndRun(sourceCode);
+	BOOST_CHECK(callContractFunction("g(bool)", true) == encodeArgs(3));
+	BOOST_CHECK(callContractFunction("g(bool)", false) == encodeArgs(10));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 }

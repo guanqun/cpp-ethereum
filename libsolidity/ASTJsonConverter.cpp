@@ -294,6 +294,13 @@ bool ASTJsonConverter::visit(Identifier const& _node)
 	return true;
 }
 
+bool ASTJsonConverter::visit(FunctionIdentifier const& _node)
+{
+	addJsonNode("FunctionIdentifier",
+				{ make_pair("value", _node.getName()), make_pair("type", getType(_node)) });
+	return true;
+}
+
 bool ASTJsonConverter::visit(ElementaryTypeNameExpression const& _node)
 {
 	addJsonNode("ElementaryTypenameExpression",
@@ -452,6 +459,10 @@ void ASTJsonConverter::endVisit(PrimaryExpression const&)
 }
 
 void ASTJsonConverter::endVisit(Identifier const&)
+{
+}
+
+void ASTJsonConverter::endVisit(FunctionIdentifier const&)
 {
 }
 

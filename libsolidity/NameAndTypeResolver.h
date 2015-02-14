@@ -52,15 +52,17 @@ public:
 	/// Updates the given global declaration (used for "this"). Not to be used with declarations
 	/// that create their own scope.
 	void updateDeclaration(Declaration const& _declaration);
+	/// Check whether there's duplicate function declarations.
+	void checkDuplicateFunctionDeclaration(ContractDefinition& _contract);
 
 	/// Resolves the given @a _name inside the scope @a _scope. If @a _scope is omitted,
 	/// the global scope is used (i.e. the one containing only the contract).
 	/// @returns a pointer to the declaration on success or nullptr on failure.
-	Declaration const* resolveName(ASTString const& _name, Declaration const* _scope = nullptr) const;
+	std::set<Declaration const*> resolveName(ASTString const& _name, Declaration const* _scope = nullptr) const;
 
 	/// Resolves a name in the "current" scope. Should only be called during the initial
 	/// resolving phase.
-	Declaration const* getNameFromCurrentScope(ASTString const& _name, bool _recursive = true);
+	std::set<Declaration const*> getNameFromCurrentScope(ASTString const& _name, bool _recursive = true);
 
 private:
 	void reset();
@@ -131,6 +133,7 @@ public:
 private:
 	virtual void endVisit(VariableDeclaration& _variable) override;
 	virtual bool visit(Identifier& _identifier) override;
+	virtual bool visit(FunctionIdentifier& _functionIdentifier) override;
 	virtual bool visit(UserDefinedTypeName& _typeName) override;
 	virtual bool visit(Mapping&) override;
 	virtual bool visit(Return& _return) override;

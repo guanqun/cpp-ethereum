@@ -78,6 +78,7 @@ public:
 	bool visit(IndexAccess const& _node) override;
 	bool visit(PrimaryExpression const& _node) override;
 	bool visit(Identifier const& _node) override;
+	bool visit(FunctionIdentifier const& _node) override;
 	bool visit(ElementaryTypeNameExpression const& _node) override;
 	bool visit(Literal const& _node) override;
 
@@ -117,6 +118,7 @@ public:
 	void endVisit(IndexAccess const&) override;
 	void endVisit(PrimaryExpression const&) override;
 	void endVisit(Identifier const&) override;
+	void endVisit(FunctionIdentifier const&) override;
 	void endVisit(ElementaryTypeNameExpression const&) override;
 	void endVisit(Literal const&) override;
 

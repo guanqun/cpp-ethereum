@@ -60,6 +60,7 @@ private:
 	virtual bool visit(IndexAccess& _expression) override { return checkExpression(_expression); }
 	virtual bool visit(PrimaryExpression& _expression) override { return checkExpression(_expression); }
 	virtual bool visit(Identifier& _expression) override { return checkExpression(_expression); }
+	virtual bool visit(FunctionIdentifier& _expression) override { return checkExpression(_expression); }
 	virtual bool visit(ElementaryTypeNameExpression& _expression) override { return checkExpression(_expression); }
 	virtual bool visit(Literal& _expression) override { return checkExpression(_expression); }
 	bool checkExpression(Expression& _expression)
@@ -79,7 +80,9 @@ Declaration const& resolveDeclaration(vector<string> const& _namespacedName,
 	// bracers are required, cause msvc couldnt handle this macro in for statement
 	for (string const& namePart: _namespacedName)
 	{
-		BOOST_REQUIRE(declaration = _resolver.resolveName(namePart, declaration));
+		auto declarations = _resolver.resolveName(namePart, declaration);
+		BOOST_REQUIRE(!declarations.empty());
+		BOOST_REQUIRE(declaration = *declarations.begin());
 	}
 	BOOST_REQUIRE(declaration);
 	return *declaration;

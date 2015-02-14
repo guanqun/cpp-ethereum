@@ -308,6 +308,14 @@ bool ASTPrinter::visit(Identifier const& _node)
 	return goDeeper();
 }
 
+bool ASTPrinter::visit(FunctionIdentifier const& _node)
+{
+	writeLine(string("FunctionIdentifier ") + _node.getName());
+	printType(_node);
+	printSourcePart(_node);
+	return goDeeper();
+}
+
 bool ASTPrinter::visit(ElementaryTypeNameExpression const& _node)
 {
 	writeLine(string("ElementaryTypeNameExpression ") + Token::toString(_node.getTypeToken()));
@@ -503,6 +511,11 @@ void ASTPrinter::endVisit(PrimaryExpression const&)
 }
 
 void ASTPrinter::endVisit(Identifier const&)
+{
+	m_indentation--;
+}
+
+void ASTPrinter::endVisit(FunctionIdentifier const&)
 {
 	m_indentation--;
 }

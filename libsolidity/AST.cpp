@@ -126,6 +126,7 @@ void ContractDefinition::checkIllegalOverrides() const
 	// TODO unify this at a later point. for this we need to put the constness and the access specifier
 	// into the types
 	map<string, FunctionDefinition const*> functions;
+	set<string> functionNames;
 	map<string, ModifierDefinition const*> modifiers;
 
 	// We search from derived to base, so the stored item causes the error.
@@ -138,7 +139,8 @@ void ContractDefinition::checkIllegalOverrides() const
 			string const& name = function->getName();
 			if (modifiers.count(name))
 				BOOST_THROW_EXCEPTION(modifiers[name]->createTypeError("Override changes function to modifier."));
-			FunctionDefinition const*& override = functions[name];
+			FunctionDefinition const*& override = functions[function->getCanonicalSignature()];
+			functionNames.insert(name);
 			if (!override)
 				override = function.get();
 			else if (override->getVisibility() != function->getVisibility() ||
@@ -149,13 +151,13 @@ void ContractDefinition::checkIllegalOverrides() const
 		for (ASTPointer<ModifierDefinition> const& modifier: contract->getFunctionModifiers())
 		{
 			string const& name = modifier->getName();
-			if (functions.count(name))
-				BOOST_THROW_EXCEPTION(functions[name]->createTypeError("Override changes modifier to function."));
 			ModifierDefinition const*& override = modifiers[name];
 			if (!override)
 				override = modifier.get();
 			else if (ModifierType(*override) != ModifierType(*modifier))
 				BOOST_THROW_EXCEPTION(override->createTypeError("Override changes modifier signature."));
+			if (functionNames.count(name))
+				BOOST_THROW_EXCEPTION(override->createTypeError("Override changes modifier to function."));
 		}
 	}
 }
@@ -473,9 +475,12 @@ void BinaryOperation::checkTypeRequirements()
 
 void FunctionCall::checkTypeRequirements()
 {
-	m_expression->checkTypeRequirements();
 	for (ASTPointer<Expression> const& argument: m_arguments)
 		argument->checkTypeRequirements();
+
+	m_expression->checkTypeRequirements();
+
+	// here overload resolver!!!! TODO:
 
 	Type const* expressionType = m_expression->getType().get();
 	if (isTypeConversion())
@@ -594,6 +599,107 @@ void IndexAccess::checkTypeRequirements()
 void Identifier::checkTypeRequirements()
 {
 	solAssert(m_referencedDeclaration, "Identifier not resolved.");
+
+	m_lvalue = m_referencedDeclaration->getLValueType();
+	m_type = m_referencedDeclaration->getType(m_currentContract);
+	if (!m_type)
+		BOOST_THROW_EXCEPTION(createTypeError("Declaration referenced before type could be determined."));
+}
+
+void FunctionIdentifier::overloadResolution()
+{
+	solAssert(!m_overloadedDeclarations.empty(), "FunctionIdentifier not resolved.");
+	solAssert(!m_referencedDeclaration, "Referenced declaration should be null before overload resolution.");
+
+	if (m_overloadedDeclarations.size() == 1)
+	{
+		setReferencedDeclaration(**m_overloadedDeclarations.begin());
+		return;
+	}
+
+	bool resolved = false;
+	auto const& arguments = getFunctionCall().getArguments();
+	auto const& argumentNames = getFunctionCall().getNames();
+
+	if (argumentNames.empty())
+	{
+		// positional arguments
+		for (auto&& declaration: m_overloadedDeclarations)
+		{
+			auto type = declaration->getType();
+			FunctionType const& functionType = dynamic_cast<FunctionType const&>(*type);
+
+			auto const& parameterTypes = functionType.getParameterTypes();
+
+			if (arguments.size() == parameterTypes.size())
+			{
+				bool ok = true;
+				for (size_t i = 0; ok && i < arguments.size(); i++)
+					if (!functionType.takesArbitraryParameters() &&
+						!arguments[i]->getType()->isImplicitlyConvertibleTo(*parameterTypes[i]))
+						ok = false;
+				if (ok)
+				{
+					if (resolved)
+						BOOST_THROW_EXCEPTION(createTypeError("Ambiguous function call"));
+					resolved = true;
+					setReferencedDeclaration(*declaration);
+				}
+			}
+		}
+	}
+	else
+	{
+		// named arguments
+		for (auto&& declaration: m_overloadedDeclarations)
+		{
+			auto type = declaration->getType();
+			FunctionType const& functionType = dynamic_cast<FunctionType const&>(*type);
+
+			auto const& parameterTypes = functionType.getParameterTypes();
+			auto const& parameterNames = functionType.getParameterNames();
+
+			// to use named arguments, parameter names can't be omitted
+			if (parameterTypes.size() == parameterNames.size() && parameterTypes.size() == arguments.size())
+			{
+				bool ok = true;
+				for (auto const& parameterName: parameterNames)
+				{
+					bool found = false;
+					for (size_t i = 0; !found && i < argumentNames.size(); i++)
+						if ((found = (parameterName == *argumentNames[i])))
+						{
+							// we found the actual parameter position
+							// positionedArguments.push_back(arguments[i]);								
+						}
+				}
+
+
+			}
+		}
+	}
+
+	if (!resolved)
+		BOOST_THROW_EXCEPTION(createTypeError("Can't resolve identifier"));
+}
+
+void FunctionIdentifier::checkTypeRequirements()
+{
+	std::vector<Declaration const*> declarations{ m_overloadedDeclarations.cbegin(), m_overloadedDeclarations.cend() };
+
+	// TODO:
+	if (declarations.size() > 1)
+		for (auto&& declaration: declarations)
+			if (dynamic_cast<FunctionDefinition const*>(declaration) == nullptr)
+				BOOST_THROW_EXCEPTION(createTypeError("Only functions allow multiple declarations."));
+
+	for (size_t i = 0; i < declarations.size(); i++)
+		for (size_t j = i + 1; j < declarations.size(); j++)
+			if (dynamic_cast<FunctionType const*>(declarations[i]->getType().get())->getCanonicalSignature() ==
+				dynamic_cast<FunctionType const*>(declarations[j]->getType().get())->getCanonicalSignature())
+				BOOST_THROW_EXCEPTION(createTypeError("Two exact functions are not allowed."));
+
+	overloadResolution();
 
 	m_lvalue = m_referencedDeclaration->getLValueType();
 	m_type = m_referencedDeclaration->getType(m_currentContract);
