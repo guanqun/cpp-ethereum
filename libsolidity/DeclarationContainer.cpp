@@ -22,32 +22,62 @@
 
 #include <libsolidity/DeclarationContainer.h>
 #include <libsolidity/AST.h>
+#include <libsolidity/Types.h>
 
 namespace dev
 {
 namespace solidity
 {
 
+// _update is used as a checkDeclaration flag.
 bool DeclarationContainer::registerDeclaration(Declaration const& _declaration, bool _update)
 {
 	if (_declaration.getName().empty())
 		return true;
 
-	if (!_update && m_declarations.find(_declaration.getName()) != m_declarations.end())
-		return false;
-	m_declarations[_declaration.getName()] = &_declaration;
+	TypePointer typePointer = _declaration.getType();
+	if (typePointer && typePointer->getCategory() == Type::Category::Function)
+	{
+		if (!_update)
+		{
+			auto declarations = resolveName(_declaration.getName(), true);
+			if (!declarations.empty())
+				for (auto const* declaration : declarations)
+					if (declaration->getType()->getCategory() != Type::Category::Function)
+						return false;
+		}
+	}
+	else
+	{
+		if (!_update && m_declarations.count(_declaration.getName()) != 0)
+			return false;
+	}
+
+	auto declarations = resolveName(_declaration.getName(), true);
+	bool needInsert = true;
+	for (auto const* declaration : declarations)
+		if (declaration == &_declaration)
+		{
+			needInsert = false;
+			break;
+		}
+	if (needInsert)
+		m_declarations.insert(make_pair(_declaration.getName(), &_declaration));
 	return true;
 }
 
-Declaration const* DeclarationContainer::resolveName(ASTString const& _name, bool _recursive) const
+std::vector<Declaration const*> DeclarationContainer::resolveName(ASTString const& _name, bool _recursive) const
 {
 	solAssert(!_name.empty(), "Attempt to resolve empty name.");
-	auto result = m_declarations.find(_name);
-	if (result != m_declarations.end())
-		return result->second;
+	std::vector<Declaration const*> declarations;
+	auto range = m_declarations.equal_range(_name);
+	for (auto it = range.first; it != range.second; ++it)
+		declarations.push_back(it->second);
+	if (!declarations.empty())
+		return declarations;
 	if (_recursive && m_enclosingContainer)
 		return m_enclosingContainer->resolveName(_name, true);
-	return nullptr;
+	return declarations;
 }
 
 }

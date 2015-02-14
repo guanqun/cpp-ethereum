@@ -79,6 +79,7 @@ public:
 	virtual bool visit(IndexAccess&) { return true; }
 	virtual bool visit(PrimaryExpression&) { return true; }
 	virtual bool visit(Identifier&) { return true; }
+	virtual bool visit(FunctionIdentifier&) { return true; }
 	virtual bool visit(ElementaryTypeNameExpression&) { return true; }
 	virtual bool visit(Literal&) { return true; }
 
@@ -120,6 +121,7 @@ public:
 	virtual void endVisit(IndexAccess&) { }
 	virtual void endVisit(PrimaryExpression&) { }
 	virtual void endVisit(Identifier&) { }
+	virtual void endVisit(FunctionIdentifier&) { }
 	virtual void endVisit(ElementaryTypeNameExpression&) { }
 	virtual void endVisit(Literal&) { }
 };
@@ -165,6 +167,7 @@ public:
 	virtual bool visit(IndexAccess const&) { return true; }
 	virtual bool visit(PrimaryExpression const&) { return true; }
 	virtual bool visit(Identifier const&) { return true; }
+	virtual bool visit(FunctionIdentifier const&) { return true; }
 	virtual bool visit(ElementaryTypeNameExpression const&) { return true; }
 	virtual bool visit(Literal const&) { return true; }
 
@@ -206,6 +209,7 @@ public:
 	virtual void endVisit(IndexAccess const&) { }
 	virtual void endVisit(PrimaryExpression const&) { }
 	virtual void endVisit(Identifier const&) { }
+	virtual void endVisit(FunctionIdentifier const&) { }
 	virtual void endVisit(ElementaryTypeNameExpression const&) { }
 	virtual void endVisit(Literal const&) { }
 };
