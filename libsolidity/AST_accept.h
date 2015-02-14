@@ -603,6 +603,18 @@ void Identifier::accept(ASTConstVisitor& _visitor) const
 	_visitor.endVisit(*this);
 }
 
+void FunctionIdentifier::accept(ASTVisitor& _visitor)
+{
+	_visitor.visit(*this);
+	_visitor.endVisit(*this);
+}
+
+void FunctionIdentifier::accept(ASTConstVisitor& _visitor) const
+{
+	_visitor.visit(*this);
+	_visitor.endVisit(*this);
+}
+
 void ElementaryTypeNameExpression::accept(ASTVisitor& _visitor)
 {
 	_visitor.visit(*this);

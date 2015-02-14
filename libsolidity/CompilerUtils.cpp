@@ -86,6 +86,7 @@ void CompilerUtils::moveToStackVariable(VariableDeclaration const& _variable)
 	if (stackPosition - size + 1 > 16)
 		BOOST_THROW_EXCEPTION(CompilerError() << errinfo_sourceLocation(_variable.getLocation())
 											  << errinfo_comment("Stack too deep."));
+    std::cout<< "moveToStackVariable: " << stackPosition<< ", " << size << ", "<<std::endl;
 	for (unsigned i = 0; i < size; ++i)
 		m_context << eth::swapInstruction(stackPosition - size + 1) << eth::Instruction::POP;
 }

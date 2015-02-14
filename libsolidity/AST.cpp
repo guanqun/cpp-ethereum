@@ -126,6 +126,7 @@ void ContractDefinition::checkIllegalOverrides() const
 	// TODO unify this at a later point. for this we need to put the constness and the access specifier
 	// into the types
 	map<string, FunctionDefinition const*> functions;
+	set<string> functionNames;
 	map<string, ModifierDefinition const*> modifiers;
 
 	// We search from derived to base, so the stored item causes the error.
@@ -138,7 +139,8 @@ void ContractDefinition::checkIllegalOverrides() const
 			string const& name = function->getName();
 			if (modifiers.count(name))
 				BOOST_THROW_EXCEPTION(modifiers[name]->createTypeError("Override changes function to modifier."));
-			FunctionDefinition const*& override = functions[name];
+			FunctionDefinition const*& override = functions[function->getCanonicalSignature()];
+			functionNames.insert(name);
 			if (!override)
 				override = function.get();
 			else if (override->getVisibility() != function->getVisibility() ||
@@ -149,7 +151,7 @@ void ContractDefinition::checkIllegalOverrides() const
 		for (ASTPointer<ModifierDefinition> const& modifier: contract->getFunctionModifiers())
 		{
 			string const& name = modifier->getName();
-			if (functions.count(name))
+			if (functionNames.count(name))
 				BOOST_THROW_EXCEPTION(functions[name]->createTypeError("Override changes modifier to function."));
 			ModifierDefinition const*& override = modifiers[name];
 			if (!override)
@@ -594,6 +596,16 @@ void IndexAccess::checkTypeRequirements()
 void Identifier::checkTypeRequirements()
 {
 	solAssert(m_referencedDeclaration, "Identifier not resolved.");
+
+	m_lvalue = m_referencedDeclaration->getLValueType();
+	m_type = m_referencedDeclaration->getType(m_currentContract);
+	if (!m_type)
+		BOOST_THROW_EXCEPTION(createTypeError("Declaration referenced before type could be determined."));
+}
+
+void FunctionIdentifier::checkTypeRequirements()
+{
+	solAssert(m_referencedDeclaration, "FunctionIdentifier not resolved.");
 
 	m_lvalue = m_referencedDeclaration->getLValueType();
 	m_type = m_referencedDeclaration->getType(m_currentContract);

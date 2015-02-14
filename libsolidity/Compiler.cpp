@@ -301,6 +301,7 @@ bool Compiler::visit(FunctionDefinition const& _function)
 		}
 		else
 		{
+            std::cout << "FunctionDefinition visit" << std::endl;
 			m_context << eth::swapInstruction(stackLayout.size() - stackLayout.back() - 1);
 			swap(stackLayout[stackLayout.back()], stackLayout.back());
 		}

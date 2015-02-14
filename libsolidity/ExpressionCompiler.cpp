@@ -531,8 +531,6 @@ void ExpressionCompiler::endVisit(Identifier const& _identifier)
 			if (!dynamic_cast<ContractType const&>(*magicVar->getType()).isSuper())
 				m_context << eth::Instruction::ADDRESS;
 	}
-	else if (FunctionDefinition const* functionDef = dynamic_cast<FunctionDefinition const*>(declaration))
-		m_context << m_context.getVirtualFunctionEntryLabel(*functionDef).pushTag();
 	else if (dynamic_cast<VariableDeclaration const*>(declaration))
 	{
 		m_currentLValue.fromIdentifier(_identifier, *declaration);
@@ -550,6 +548,17 @@ void ExpressionCompiler::endVisit(Identifier const& _identifier)
 	{
 		BOOST_THROW_EXCEPTION(InternalCompilerError() << errinfo_comment("Identifier type not expected in expression context."));
 	}
+}
+
+void ExpressionCompiler::endVisit(FunctionIdentifier const& _functionIdentifier)
+{
+	Declaration const* declaration = _functionIdentifier.getReferencedDeclaration();
+	if (FunctionDefinition const* functionDef = dynamic_cast<FunctionDefinition const*>(declaration))
+		m_context << m_context.getVirtualFunctionEntryLabel(*functionDef).pushTag();
+	else
+	{
+		BOOST_THROW_EXCEPTION(InternalCompilerError() << errinfo_comment("FunctionIdentifier type not expected in expression context."));
+	}	
 }
 
 void ExpressionCompiler::endVisit(Literal const& _literal)

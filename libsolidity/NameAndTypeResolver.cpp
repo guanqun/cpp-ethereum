@@ -88,29 +88,36 @@ void NameAndTypeResolver::updateDeclaration(Declaration const& _declaration)
 	solAssert(_declaration.getScope() == nullptr, "Updated declaration outside global scope.");
 }
 
-Declaration const* NameAndTypeResolver::resolveName(ASTString const& _name, Declaration const* _scope) const
+std::set<Declaration const*> NameAndTypeResolver::resolveName(ASTString const& _name, Declaration const* _scope) const
 {
 	auto iterator = m_scopes.find(_scope);
 	if (iterator == end(m_scopes))
-		return nullptr;
+		return {};
 	return iterator->second.resolveName(_name, false);
 }
 
-Declaration const* NameAndTypeResolver::getNameFromCurrentScope(ASTString const& _name, bool _recursive)
+std::set<Declaration const*> NameAndTypeResolver::getNameFromCurrentScope(ASTString const& _name, bool _recursive)
 {
 	return m_currentScope->resolveName(_name, _recursive);
 }
 
 void NameAndTypeResolver::importInheritedScope(ContractDefinition const& _base)
 {
+	std::cout << "callced in NameAndTypeResolver" << std::endl;
+
 	auto iterator = m_scopes.find(&_base);
 	solAssert(iterator != end(m_scopes), "");
 	for (auto const& nameAndDeclaration: iterator->second.getDeclarations())
 	{
+
 		Declaration const* declaration = nameAndDeclaration.second;
+		std::cout << "!!!!: " << declaration->getName() << std::endl;
 		// Import if it was declared in the base and is not the constructor
 		if (declaration->getScope() == &_base && declaration->getName() != _base.getName())
+        {
+            std::cout << "importINheritancescope" << std::endl;
 			m_currentScope->registerDeclaration(*declaration);
+            }
 	}
 }
 
@@ -335,24 +342,115 @@ bool ReferencesResolver::visit(Mapping&)
 
 bool ReferencesResolver::visit(UserDefinedTypeName& _typeName)
 {
-	Declaration const* declaration = m_resolver.getNameFromCurrentScope(_typeName.getName());
-	if (!declaration)
+	auto declarations = m_resolver.getNameFromCurrentScope(_typeName.getName());
+	if (declarations.empty())
 		BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_typeName.getLocation())
 												 << errinfo_comment("Undeclared identifier."));
-	_typeName.setReferencedDeclaration(*declaration);
+	else if (declarations.size() > 1)
+		BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_typeName.getLocation())
+												 << errinfo_comment("Duplicate identifier."));
+	else
+		_typeName.setReferencedDeclaration(*declarations.begin());
 	return false;
 }
 
 bool ReferencesResolver::visit(Identifier& _identifier)
 {
-	Declaration const* declaration = m_resolver.getNameFromCurrentScope(_identifier.getName());
-	if (!declaration)
+	auto declarations = m_resolver.getNameFromCurrentScope(_identifier.getName());
+	if (declarations.empty())
 		BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_identifier.getLocation())
 												 << errinfo_comment("Undeclared identifier."));
-	_identifier.setReferencedDeclaration(*declaration, m_currentContract);
+	else if (declarations.size() > 1)
+		BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_identifier.getLocation())
+												 << errinfo_comment("Duplicate identifier."));
+	else
+		_identifier.setReferencedDeclaration(*declarations.begin(), m_currentContract);
 	return false;
 }
 
+bool ReferencesResolver::endVisit(FunctionIdentifier& _functionIdentifier)
+{
+	auto declarations = m_resolver.getNameFromCurrentScope(_functionIdentifier.getName());
+	if (declarations.empty())
+		BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_functionIdentifier.getLocation())
+												 << errinfo_comment("Undeclared identifier."));
+	else
+	{
+		bool resolved = false;
+		auto const& arguments = _functionIdentifier.getFunctionCall().getArguments();
+		auto const& argumentNames = _functionIdentifier.getFunctionCall().getNames();
+
+		if (argumentNames.empty())
+		{
+			// positional arguments
+			for (auto&& declaration: declarations)
+			{
+				auto type = declaration->getType();
+				FunctionType const& functionType = dynamic_cast<FunctionType const&>(*type);
+
+				auto const& parameterTypes = functionType.getParameterTypes();
+
+				if (arguments.size() == parameterTypes.size())
+				{
+					bool ok = true;
+					for (size_t i = 0; ok && i < arguments.size(); i++)
+						if (!functionType.takesArbitraryParameters() &&
+							!arguments[i]->getType()->isImplicitlyConvertibleTo(*parameterTypes[i]))
+							ok = false;
+					if (ok)
+					{
+						if (resolved)
+							BOOST_THROW_EXCEPTION(_functionIdentifier.createTypeError("Ambiguous function call"));
+						resolved = true;
+						_functionIdentifier.setReferencedDeclaration(*declaration);
+					}					
+				}
+			}
+		}
+		else
+		{
+			// named arguments
+			for (auto&& declaration: declarations)
+			{
+				auto type = declaration->getType();
+				FunctionType const& functionType = dynamic_cast<FunctionType const&>(*type);
+
+				auto const& parameterTypes = functionType.getParameterTypes();
+				auto const& parameterNames = functionType.getParameterNames();
+
+				// to use named arguments, parameter names can't be omitted
+				if (parameterTypes.size() == parameterNames.size() && parameterTypes.size() == arguments.size())
+				{
+					bool ok = true;
+					for (auto const& parameterName: parameterNames)
+					{
+						bool found = false;
+						for (size_t i = 0; !found && i < argumentNames.size(); i++)
+							if ((found = (parameterName == *argumentNames[i])))
+							{
+								// we found the actual parameter position
+								// positionedArguments.push_back(arguments[i]);								
+							}
+					}
+
+
+				}
+			}
+		}
+
+		if (!resolved)
+			BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_functionIdentifier.getLocation())
+													 << errinfo_comment("Can't resolve identifier"));
+	}
+
+	return false;
+}
+
+void ReferencesResolver::overloadResolution(std::vector<Declaration const*> const& _declarations, Identifier const& _identifier)
+{
+	// right now, we only handle function overloads
+	
+}
 
 }
 }
