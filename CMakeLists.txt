@@ -150,25 +150,25 @@ if (JSONRPC)
 endif()
 
 add_subdirectory(secp256k1)
-add_subdirectory(libp2p)
+#add_subdirectory(libp2p)
 add_subdirectory(libdevcrypto)
-add_subdirectory(libwhisper)
+#add_subdirectory(libwhisper)
 
 add_subdirectory(libethcore)
 add_subdirectory(libevm)
-add_subdirectory(libethereum)
+#add_subdirectory(libethereum)
 
-add_subdirectory(libwebthree)
-add_subdirectory(test)
-add_subdirectory(eth)
+#add_subdirectory(libwebthree)
+#add_subdirectory(test)
+#add_subdirectory(eth)
 if("x${CMAKE_BUILD_TYPE}" STREQUAL "xDebug")
 	add_subdirectory(exp)
 endif ()
 
 # TODO check msvc
-if(NOT ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC"))
-	add_subdirectory(neth)
-endif ()
+#if(NOT ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC"))
+#	add_subdirectory(neth)
+#endif ()
 
 if (NOT HEADLESS)
 	

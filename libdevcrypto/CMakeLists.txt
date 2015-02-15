@@ -11,7 +11,6 @@ aux_source_directory(. SRC_LIST)
 
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${CRYPTOPP_INCLUDE_DIRS})
-include_directories(${LEVELDB_INCLUDE_DIRS})
 include_directories(..) 
 
 set(EXECUTABLE devcrypto)
@@ -24,7 +23,6 @@ else()
 endif()
 
 target_link_libraries(${EXECUTABLE} ${Boost_FILESYSTEM_LIBRARIES})
-target_link_libraries(${EXECUTABLE} ${LEVELDB_LIBRARIES})
 target_link_libraries(${EXECUTABLE} ${CRYPTOPP_LIBRARIES})
 target_link_libraries(${EXECUTABLE} devcore)
 
