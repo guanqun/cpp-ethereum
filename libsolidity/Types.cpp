@@ -635,11 +635,13 @@ FunctionType::FunctionType(FunctionDefinition const& _function, bool _isInternal
 	TypePointers retParams;
 	vector<string> retParamNames;
 
+	std::cout << "FunctionDefinition => FunctionType  " << _function.getParameters().size() << std::endl;
 	params.reserve(_function.getParameters().size());
 	paramNames.reserve(_function.getParameters().size());
 	for (ASTPointer<VariableDeclaration> const& var: _function.getParameters())
 	{
 		paramNames.push_back(var->getName());
+		std::cout << "\t\t" << var->getName() << std::endl;
 		params.push_back(var->getType());
 	}
 	retParams.reserve(_function.getReturnParameters().size());

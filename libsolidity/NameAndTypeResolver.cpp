@@ -381,10 +381,18 @@ bool ReferencesResolver::visit(FunctionIdentifier& _functionIdentifier)
 		bool resolved = false;
 		auto arguments = _functionIdentifier.getFunctionCall().getArguments();
 
+		std::cout << "ARGUMENT SIZE: " << arguments.size() << std::endl;
+		std::cout << "DECLARATION SIZE: " << declarations.size() << std::endl;
+
 		// first number of parameters
 		for (auto const* declaration : declarations)
 		{
-			FunctionType const& functionType = dynamic_cast<FunctionType const&>(*declaration->getType());
+
+			auto ft = declaration->getType();
+			FunctionType const& functionType = dynamic_cast<FunctionType const&>(*ft);
+			std::cout << "   1. " << functionType.toString() << std::endl;
+			std::cout << "   2. " << functionType.getParameterTypes().size() << std::endl;
+			std::cout << "   3. " << functionType.getParameterNames().size() << std::endl;
 			if (functionType.getParameterTypes().size() == arguments.size())
 			{
 				_functionIdentifier.setReferencedDeclaration(*declaration);

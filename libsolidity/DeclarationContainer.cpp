@@ -35,30 +35,35 @@ bool DeclarationContainer::registerDeclaration(Declaration const& _declaration, 
 	if (_declaration.getName().empty())
 		return true;
 
-	// TypePointer typePointer = _declaration.getType();
-	// if (typePointer && typePointer->getCategory() == Type::Category::Function)
-	// {
-	// 	if (!_update)
-	// 	{
-	// 		// auto declarations = resolveName(_declaration.getName(), true);
-	// 		// if (!declarations.empty())
-	// 		// 	for (auto const* declaration : declarations)
-	// 		// 		if (declaration->getType()->getCategory() != Type::Category::Function)
-	// 		// 			return false;
-	// 	}
+	TypePointer typePointer = _declaration.getType();
+	if (typePointer && typePointer->getCategory() == Type::Category::Function)
+	{
+		if (!_update)
+		{
+			auto declarations = resolveName(_declaration.getName(), true);
+			if (!declarations.empty())
+				for (auto const* declaration : declarations)
+					if (declaration->getType()->getCategory() != Type::Category::Function)
+						return false;
+		}
+	}
+	else
+	{
+		if (!_update && m_declarations.count(_declaration.getName()) != 0)
+			return false;
+	}
 
-	// 	m_declarations.insert(make_pair(_declaration.getName(), &_declaration));
-	// 	return true;
-	// }
-	// else
-	// {
-	// 	if (!_update && m_declarations.count(_declaration.getName()) != 0)
-	// 		return false;
-
-	std::cout << "registerDeclaration in DeclarationContainer" << std::endl;
+	auto declarations = resolveName(_declaration.getName(), true);
+	bool needInsert = true;
+	for (auto const* declaration : declarations)
+		if (declaration == &_declaration)
+		{
+			needInsert = false;
+			break;
+		}
+	if (needInsert)
 		m_declarations.insert(make_pair(_declaration.getName(), &_declaration));
-		return true;
-	// }
+	return true;
 }
 
 std::vector<Declaration const*> DeclarationContainer::resolveName(ASTString const& _name, bool _recursive) const
