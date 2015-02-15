@@ -29,22 +29,36 @@ namespace dev
 namespace solidity
 {
 
+// _update is used as a checkDeclaration flag.
 bool DeclarationContainer::registerDeclaration(Declaration const& _declaration, bool _update)
 {
 	if (_declaration.getName().empty())
 		return true;
 
-	// auto declarations = resolveName(_declaration.getName(), true);
-	// std::set<Type::Category> categories;
-	// for (auto const* delcartion : declarations)
-	// 	categories.insert(declaration->getType()->getCategory());
-	// if (categories.size() > 1)
+	// TypePointer typePointer = _declaration.getType();
+	// if (typePointer && typePointer->getCategory() == Type::Category::Function)
+	// {
+	// 	if (!_update)
+	// 	{
+	// 		// auto declarations = resolveName(_declaration.getName(), true);
+	// 		// if (!declarations.empty())
+	// 		// 	for (auto const* declaration : declarations)
+	// 		// 		if (declaration->getType()->getCategory() != Type::Category::Function)
+	// 		// 			return false;
+	// 	}
 
-	// TODO: check the _update = false case
-	if (!_update && m_declarations.count(_declaration.getName()) != 0)
-		return false;
-	m_declarations.emplace(_declaration.getName(), &_declaration);
-	return true;
+	// 	m_declarations.insert(make_pair(_declaration.getName(), &_declaration));
+	// 	return true;
+	// }
+	// else
+	// {
+	// 	if (!_update && m_declarations.count(_declaration.getName()) != 0)
+	// 		return false;
+
+	std::cout << "registerDeclaration in DeclarationContainer" << std::endl;
+		m_declarations.insert(make_pair(_declaration.getName(), &_declaration));
+		return true;
+	// }
 }
 
 std::vector<Declaration const*> DeclarationContainer::resolveName(ASTString const& _name, bool _recursive) const

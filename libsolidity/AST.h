@@ -367,7 +367,7 @@ public:
 	ASTPointer<ParameterList> const& getReturnParameterList() const { return m_returnParameters; }
 	Block const& getBody() const { return *m_body; }
 
-	virtual TypePointer getType(ContractDefinition const*) const override;
+	virtual TypePointer getType(ContractDefinition const* _contract = nullptr) const override;
 
 	/// Checks that all parameters have allowed types and calls checkTypeRequirements on the body.
 	void checkTypeRequirements();

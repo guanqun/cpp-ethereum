@@ -257,6 +257,7 @@ void StructDefinition::checkRecursion() const
 
 TypePointer FunctionDefinition::getType(ContractDefinition const*) const
 {
+	std::cout << "FunctionDefinition::getType" << std::endl;
 	return make_shared<FunctionType>(*this);
 }
 

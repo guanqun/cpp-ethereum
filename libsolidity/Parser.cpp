@@ -685,8 +685,9 @@ ASTPointer<Expression> Parser::parseLeftHandSideExpression()
 			if (Identifier* identifier = dynamic_cast<Identifier*>(expression.get()))
 			{
 				ASTPointer<FunctionIdentifier> functionIdentifier = make_shared<FunctionIdentifier>(identifier->getLocation(), make_shared<ASTString>(identifier->getName()));
-				expression = nodeFactory.createNode<FunctionCall>(functionIdentifier, arguments, names);
-				functionIdentifier->setFunctionCall(functionIdentifier);
+				auto functionCall = nodeFactory.createNode<FunctionCall>(functionIdentifier, arguments, names);
+				functionIdentifier->setFunctionCall(functionCall);
+				expression = functionCall;
 			}
 			else
 				expression = nodeFactory.createNode<FunctionCall>(expression, arguments, names);

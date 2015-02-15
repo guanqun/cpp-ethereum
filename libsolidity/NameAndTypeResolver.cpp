@@ -103,14 +103,21 @@ std::vector<Declaration const*> NameAndTypeResolver::getNameFromCurrentScope(AST
 
 void NameAndTypeResolver::importInheritedScope(ContractDefinition const& _base)
 {
+	std::cout << "callced in NameAndTypeResolver" << std::endl;
+
 	auto iterator = m_scopes.find(&_base);
 	solAssert(iterator != end(m_scopes), "");
 	for (auto const& nameAndDeclaration: iterator->second.getDeclarations())
 	{
+
 		Declaration const* declaration = nameAndDeclaration.second;
+		std::cout << "!!!!: " << declaration->getName() << std::endl;
 		// Import if it was declared in the base and is not the constructor
 		if (declaration->getScope() == &_base && declaration->getName() != _base.getName())
+        {
+            std::cout << "importINheritancescope" << std::endl;
 			m_currentScope->registerDeclaration(*declaration);
+            }
 	}
 }
 
@@ -119,6 +126,8 @@ void NameAndTypeResolver::linearizeBaseContracts(ContractDefinition& _contract) 
 	// order in the lists is from derived to base
 	// list of lists to linearize, the last element is the list of direct bases
 	list<list<ContractDefinition const*>> input;
+    list<ContractDefinition const*> temp;
+    input.push_back(temp);
 	for (ASTPointer<InheritanceSpecifier> const& baseSpecifier: _contract.getBaseContracts())
 	{
 		ASTPointer<Identifier> baseName = baseSpecifier->getName();
@@ -365,11 +374,30 @@ bool ReferencesResolver::visit(FunctionIdentifier& _functionIdentifier)
 {
 	auto declarations = m_resolver.getNameFromCurrentScope(_functionIdentifier.getName());
 	if (declarations.empty())
-		BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_identifier.getLocation())
+		BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_functionIdentifier.getLocation())
 												 << errinfo_comment("Undeclared identifier."));
 	else
 	{
-		
+		bool resolved = false;
+		auto arguments = _functionIdentifier.getFunctionCall().getArguments();
+
+		// first number of parameters
+		for (auto const* declaration : declarations)
+		{
+			FunctionType const& functionType = dynamic_cast<FunctionType const&>(*declaration->getType());
+			if (functionType.getParameterTypes().size() == arguments.size())
+			{
+				_functionIdentifier.setReferencedDeclaration(*declaration);
+				resolved = true;
+				break;
+			}
+		}
+		// then type of parameters
+		// TODO:
+
+		if (!resolved)
+			BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_functionIdentifier.getLocation())
+													 << errinfo_comment("Can't resolve identifier"));
 	}
 
 	return false;
