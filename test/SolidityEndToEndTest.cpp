@@ -2254,6 +2254,19 @@ BOOST_AUTO_TEST_CASE(generic_call)
 	BOOST_CHECK_EQUAL(m_state.balance(m_contractAddress), 50 - 2);
 }
 
+BOOST_AUTO_TEST_CASE(overloaded_function_call)
+{
+	char const* sourceCode = R"(
+		contract test {
+			function f(uint k) returns(uint d) { return k; }
+			function f(uint a, uint b) returns(uint d) { return a + b; }
+			function g() returns(uint d) { return f(3); }
+		}
+	)";
+	compileAndRun(sourceCode);
+	BOOST_CHECK(callContractFunction("g()") == encodeArgs(3));
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 }

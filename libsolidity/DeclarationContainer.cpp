@@ -35,16 +35,28 @@ bool DeclarationContainer::registerDeclaration(Declaration const& _declaration, 
 	if (_declaration.getName().empty())
 		return true;
 
-	TypePointer typePointer = _declaration.getType();
-	if (typePointer && typePointer->getCategory() == Type::Category::Function)
+	TypePointer newType = _declaration.getType();
+	if (newType->getCategory() == Type::Category::Function)
 	{
 		if (!_update)
 		{
 			auto declarations = resolveName(_declaration.getName(), true);
 			if (!declarations.empty())
+			{
+				FunctionType const& newFunction = dynamic_cast<FunctionType const&>(*newType);
+				std::string newFunctionSignature = newFunction.getCanonicalSignature();
+
 				for (auto const* declaration : declarations)
-					if (declaration->getType()->getCategory() != Type::Category::Function)
+				{
+					auto type = declaration->getType();
+					if (type->getCategory() != Type::Category::Function)
 						return false;
+
+					FunctionType const& function = dynamic_cast<FunctionType const&>(*type);
+					if (function.getCanonicalSignature() == newFunctionSignature)
+						return false;
+				}
+			}
 		}
 	}
 	else

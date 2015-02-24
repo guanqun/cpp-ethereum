@@ -68,6 +68,7 @@ private:
 	virtual void endVisit(MemberAccess const& _memberAccess) override;
 	virtual bool visit(IndexAccess const& _indexAccess) override;
 	virtual void endVisit(Identifier const& _identifier) override;
+	virtual void endVisit(FunctionIdentifier const& _identifier) override;
 	virtual void endVisit(Literal const& _literal) override;
 
 	///@{

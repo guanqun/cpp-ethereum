@@ -377,29 +377,66 @@ bool ReferencesResolver::visit(FunctionIdentifier& _functionIdentifier)
 	else
 	{
 		bool resolved = false;
-		auto arguments = _functionIdentifier.getFunctionCall().getArguments();
+		auto const& arguments = _functionIdentifier.getFunctionCall().getArguments();
+		auto const& argumentNames = _functionIdentifier.getFunctionCall().getNames();
 
-		std::cout << "ARGUMENT SIZE: " << arguments.size() << std::endl;
-		std::cout << "DECLARATION SIZE: " << declarations.size() << std::endl;
-
-		// first number of parameters
-		for (auto const* declaration : declarations)
+		if (argumentNames.empty())
 		{
-
-			auto ft = declaration->getType();
-			FunctionType const& functionType = dynamic_cast<FunctionType const&>(*ft);
-			std::cout << "   1. " << functionType.toString() << std::endl;
-			std::cout << "   2. " << functionType.getParameterTypes().size() << std::endl;
-			std::cout << "   3. " << functionType.getParameterNames().size() << std::endl;
-			if (functionType.getParameterTypes().size() == arguments.size())
+			// positional arguments
+			for (auto&& declaration: declarations)
 			{
-				_functionIdentifier.setReferencedDeclaration(*declaration);
-				resolved = true;
-				break;
+				auto type = declaration->getType();
+				FunctionType const& functionType = dynamic_cast<FunctionType const&>(*type);
+
+				auto const& parameterTypes = functionType.getParameterTypes();
+
+				if (arguments.size() == parameterTypes.size())
+				{
+					bool ok = true;
+					for (size_t i = 0; ok && i < arguments.size(); i++)
+						if (!functionType.takesArbitraryParameters() &&
+							!arguments[i]->getType()->isImplicitlyConvertibleTo(*parameterTypes[i]))
+							ok = false;
+					if (ok)
+					{
+						if (resolved)
+							BOOST_THROW_EXCEPTION(_functionIdentifier.createTypeError("Ambiguious function call"));
+						resolved = true;
+						_functionIdentifier.setReferencedDeclaration(*declaration);
+					}					
+				}
 			}
 		}
-		// then type of parameters
-		// TODO:
+		else
+		{
+			// named arguments
+			for (auto&& declaration: declarations)
+			{
+				auto type = declaration->getType();
+				FunctionType const& functionType = dynamic_cast<FunctionType const&>(*type);
+
+				auto const& parameterTypes = functionType.getParameterTypes();
+				auto const& parameterNames = functionType.getParameterNames();
+
+				// to use named arguments, parameter names can't be omitted
+				if (parameterTypes.size() == parameterNames.size() && parameterTypes.size() == arguments.size())
+				{
+					bool ok = true;
+					for (auto const& parameterName: parameterNames)
+					{
+						bool found = false;
+						for (size_t i = 0; !found && i < argumentNames.size(); i++)
+							if ((found = (parameterName == *argumentNames[i])))
+							{
+								// we found the actual parameter position
+								// positionedArguments.push_back(arguments[i]);								
+							}
+					}
+
+
+				}
+			}
+		}
 
 		if (!resolved)
 			BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_functionIdentifier.getLocation())

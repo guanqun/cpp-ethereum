@@ -992,6 +992,30 @@ BOOST_AUTO_TEST_CASE(exp_operator_exponent_too_big)
 	BOOST_CHECK_THROW(parseTextAndResolveNames(sourceCode), TypeError);
 }
 
+BOOST_AUTO_TEST_CASE(overloaded_function_cannot_resolve)
+{
+	char const* sourceCode = R"(
+		contract test {
+			function f() returns(uint) { return 1; }
+			function f(uint a) returns(uint) { return a; }
+			function g() returns(uint) { return f(3, 5); }
+		}
+	)";
+	BOOST_CHECK_THROW(parseTextAndResolveNames(sourceCode), TypeError);
+}
+
+BOOST_AUTO_TEST_CASE(overloaded_function_cannot_resolve)
+{
+	char const* sourceCode = R"(
+		contract test {
+			function f() returns(uint) { return 1; }
+			function f(uint a) returns(uint) { return a; }
+			function g() returns(uint) { return f(3, 5); }
+		}
+	)";
+	BOOST_CHECK_THROW(parseTextAndResolveNames(sourceCode), TypeError);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 }

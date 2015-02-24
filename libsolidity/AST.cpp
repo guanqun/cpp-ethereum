@@ -125,39 +125,41 @@ void ContractDefinition::checkIllegalOverrides() const
 {
 	// TODO unify this at a later point. for this we need to put the constness and the access specifier
 	// into the types
+
+	// TODO: change to functionSignature! and add a set of plain names!!!
 	map<string, FunctionDefinition const*> functions;
 	map<string, ModifierDefinition const*> modifiers;
 
 	// We search from derived to base, so the stored item causes the error.
-	// for (ContractDefinition const* contract: getLinearizedBaseContracts())
-	// {
-	// 	for (ASTPointer<FunctionDefinition> const& function: contract->getDefinedFunctions())
-	// 	{
-	// 		if (function->isConstructor())
-	// 			continue; // constructors can neither be overridden nor override anything
-	// 		string const& name = function->getName();
-	// 		if (modifiers.count(name))
-	// 			BOOST_THROW_EXCEPTION(modifiers[name]->createTypeError("Override changes function to modifier."));
-	// 		FunctionDefinition const*& override = functions[name];
-	// 		if (!override)
-	// 			override = function.get();
-	// 		else if (override->getVisibility() != function->getVisibility() ||
-	// 				 override->isDeclaredConst() != function->isDeclaredConst() ||
-	// 				 FunctionType(*override) != FunctionType(*function))
-	// 			BOOST_THROW_EXCEPTION(override->createTypeError("Override changes extended function signature."));
-	// 	}
-	// 	for (ASTPointer<ModifierDefinition> const& modifier: contract->getFunctionModifiers())
-	// 	{
-	// 		string const& name = modifier->getName();
-	// 		if (functions.count(name))
-	// 			BOOST_THROW_EXCEPTION(functions[name]->createTypeError("Override changes modifier to function."));
-	// 		ModifierDefinition const*& override = modifiers[name];
-	// 		if (!override)
-	// 			override = modifier.get();
-	// 		else if (ModifierType(*override) != ModifierType(*modifier))
-	// 			BOOST_THROW_EXCEPTION(override->createTypeError("Override changes modifier signature."));
-	// 	}
-	// }
+	for (ContractDefinition const* contract: getLinearizedBaseContracts())
+	{
+		for (ASTPointer<FunctionDefinition> const& function: contract->getDefinedFunctions())
+		{
+			if (function->isConstructor())
+				continue; // constructors can neither be overridden nor override anything
+			string const& name = function->getName();
+			if (modifiers.count(name))
+				BOOST_THROW_EXCEPTION(modifiers[name]->createTypeError("Override changes function to modifier."));
+			FunctionDefinition const*& override = functions[name];
+			if (!override)
+				override = function.get();
+			else if (override->getVisibility() != function->getVisibility() ||
+					 override->isDeclaredConst() != function->isDeclaredConst() ||
+					 FunctionType(*override) != FunctionType(*function))
+				BOOST_THROW_EXCEPTION(override->createTypeError("Override changes extended function signature."));
+		}
+		for (ASTPointer<ModifierDefinition> const& modifier: contract->getFunctionModifiers())
+		{
+			string const& name = modifier->getName();
+			if (functions.count(name))
+				BOOST_THROW_EXCEPTION(functions[name]->createTypeError("Override changes modifier to function."));
+			ModifierDefinition const*& override = modifiers[name];
+			if (!override)
+				override = modifier.get();
+			else if (ModifierType(*override) != ModifierType(*modifier))
+				BOOST_THROW_EXCEPTION(override->createTypeError("Override changes modifier signature."));
+		}
+	}
 }
 
 std::vector<ASTPointer<EventDefinition>> const& ContractDefinition::getInterfaceEvents() const
