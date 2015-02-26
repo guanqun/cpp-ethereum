@@ -130,13 +130,11 @@ public:
 
 private:
 	virtual void endVisit(VariableDeclaration& _variable) override;
-	virtual bool endVisit(FunctionIdentifier& _functionIdentifier) override;
 	virtual bool visit(Identifier& _identifier) override;
+	virtual bool visit(FunctionIdentifier& _functionIdentifier) override;
 	virtual bool visit(UserDefinedTypeName& _typeName) override;
 	virtual bool visit(Mapping&) override;
 	virtual bool visit(Return& _return) override;
-
-	void overloadResolution(std::vector<Declaration const*> const& _declarations, Identifier const& _identifier);
 
 	NameAndTypeResolver& m_resolver;
 	ContractDefinition const* m_currentContract;

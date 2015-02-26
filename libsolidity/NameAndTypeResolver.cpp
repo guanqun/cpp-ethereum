@@ -109,15 +109,13 @@ void NameAndTypeResolver::importInheritedScope(ContractDefinition const& _base)
 	solAssert(iterator != end(m_scopes), "");
 	for (auto const& nameAndDeclaration: iterator->second.getDeclarations())
 	{
-
-		Declaration const* declaration = nameAndDeclaration.second;
-		std::cout << "!!!!: " << declaration->getName() << std::endl;
-		// Import if it was declared in the base and is not the constructor
-		if (declaration->getScope() == &_base && declaration->getName() != _base.getName())
-        {
-            std::cout << "importINheritancescope" << std::endl;
-			m_currentScope->registerDeclaration(*declaration);
-            }
+		for (auto const& declaration: nameAndDeclaration.second)
+		{
+			std::cout << "!!!!: " << declaration->getName() << std::endl;
+			// Import if it was declared in the base and is not the constructor
+			if (declaration->getScope() == &_base && declaration->getName() != _base.getName())
+				m_currentScope->registerDeclaration(*declaration);
+		}
 	}
 }
 
@@ -126,6 +124,8 @@ void NameAndTypeResolver::linearizeBaseContracts(ContractDefinition& _contract) 
 	// order in the lists is from derived to base
 	// list of lists to linearize, the last element is the list of direct bases
 	list<list<ContractDefinition const*>> input;
+    list<ContractDefinition const*> temp;
+    input.push_back(temp);
 	for (ASTPointer<InheritanceSpecifier> const& baseSpecifier: _contract.getBaseContracts())
 	{
 		ASTPointer<Identifier> baseName = baseSpecifier->getName();
@@ -350,7 +350,7 @@ bool ReferencesResolver::visit(UserDefinedTypeName& _typeName)
 		BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_typeName.getLocation())
 												 << errinfo_comment("Duplicate identifier."));
 	else
-		_typeName.setReferencedDeclaration(*declarations.begin());
+		_typeName.setReferencedDeclaration(**declarations.begin());
 	return false;
 }
 
@@ -364,92 +364,19 @@ bool ReferencesResolver::visit(Identifier& _identifier)
 		BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_identifier.getLocation())
 												 << errinfo_comment("Duplicate identifier."));
 	else
-		_identifier.setReferencedDeclaration(*declarations.begin(), m_currentContract);
+		_identifier.setReferencedDeclaration(**declarations.begin(), m_currentContract);
 	return false;
 }
 
-bool ReferencesResolver::endVisit(FunctionIdentifier& _functionIdentifier)
+bool ReferencesResolver::visit(FunctionIdentifier& _functionIdentifier)
 {
 	auto declarations = m_resolver.getNameFromCurrentScope(_functionIdentifier.getName());
 	if (declarations.empty())
 		BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_functionIdentifier.getLocation())
 												 << errinfo_comment("Undeclared identifier."));
 	else
-	{
-		bool resolved = false;
-		auto const& arguments = _functionIdentifier.getFunctionCall().getArguments();
-		auto const& argumentNames = _functionIdentifier.getFunctionCall().getNames();
-
-		if (argumentNames.empty())
-		{
-			// positional arguments
-			for (auto&& declaration: declarations)
-			{
-				auto type = declaration->getType();
-				FunctionType const& functionType = dynamic_cast<FunctionType const&>(*type);
-
-				auto const& parameterTypes = functionType.getParameterTypes();
-
-				if (arguments.size() == parameterTypes.size())
-				{
-					bool ok = true;
-					for (size_t i = 0; ok && i < arguments.size(); i++)
-						if (!functionType.takesArbitraryParameters() &&
-							!arguments[i]->getType()->isImplicitlyConvertibleTo(*parameterTypes[i]))
-							ok = false;
-					if (ok)
-					{
-						if (resolved)
-							BOOST_THROW_EXCEPTION(_functionIdentifier.createTypeError("Ambiguous function call"));
-						resolved = true;
-						_functionIdentifier.setReferencedDeclaration(*declaration);
-					}					
-				}
-			}
-		}
-		else
-		{
-			// named arguments
-			for (auto&& declaration: declarations)
-			{
-				auto type = declaration->getType();
-				FunctionType const& functionType = dynamic_cast<FunctionType const&>(*type);
-
-				auto const& parameterTypes = functionType.getParameterTypes();
-				auto const& parameterNames = functionType.getParameterNames();
-
-				// to use named arguments, parameter names can't be omitted
-				if (parameterTypes.size() == parameterNames.size() && parameterTypes.size() == arguments.size())
-				{
-					bool ok = true;
-					for (auto const& parameterName: parameterNames)
-					{
-						bool found = false;
-						for (size_t i = 0; !found && i < argumentNames.size(); i++)
-							if ((found = (parameterName == *argumentNames[i])))
-							{
-								// we found the actual parameter position
-								// positionedArguments.push_back(arguments[i]);								
-							}
-					}
-
-
-				}
-			}
-		}
-
-		if (!resolved)
-			BOOST_THROW_EXCEPTION(DeclarationError() << errinfo_sourceLocation(_functionIdentifier.getLocation())
-													 << errinfo_comment("Can't resolve identifier"));
-	}
-
+		_functionIdentifier.setOverloadedDeclarations(declarations);
 	return false;
-}
-
-void ReferencesResolver::overloadResolution(std::vector<Declaration const*> const& _declarations, Identifier const& _identifier)
-{
-	// right now, we only handle function overloads
-	
 }
 
 }

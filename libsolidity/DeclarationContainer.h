@@ -46,14 +46,14 @@ public:
 	/// Registers the declaration in the scope unless its name is already declared or the name is empty.
 	/// @returns false if the name was already declared.
 	bool registerDeclaration(Declaration const& _declaration, bool _update = false);
-	set<Declaration const*> resolveName(ASTString const& _name, bool _recursive = false) const;
+	std::set<Declaration const*> resolveName(ASTString const& _name, bool _recursive = false) const;
 	Declaration const* getEnclosingDeclaration() const { return m_enclosingDeclaration; }
-	map<ASTString, set<Declaration const*>> const& getDeclarations() const { return m_declarations; }
+	std::map<ASTString, std::set<Declaration const*>> const& getDeclarations() const { return m_declarations; }
 
 private:
 	Declaration const* m_enclosingDeclaration;
 	DeclarationContainer const* m_enclosingContainer;
-	map<ASTString, set<Declaration const*>> m_declarations;
+	std::map<ASTString, std::set<Declaration const*>> m_declarations;
 };
 
 }

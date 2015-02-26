@@ -1100,12 +1100,14 @@ public:
 	void setFunctionCall(ASTPointer<FunctionCall> const& _functionCall) { m_functionCall = _functionCall; }
 	FunctionCall const& getFunctionCall() const { return *m_functionCall; }
 
-	void setOverloadedDeclarations(std::vector<Declaration const*> const& _declarations) { m_overloadedDeclarations = _declarations; }
-	std::vector<Declaration const*> getOverloadedDeclarations() const { return m_overloadedDeclarations; }
+	void setOverloadedDeclarations(std::set<Declaration const*> const& _declarations) { m_overloadedDeclarations = _declarations; }
+	std::set<Declaration const*> getOverloadedDeclarations() const { return m_overloadedDeclarations; }
 
 private:
+	void overloadResolution();
+
 	/// Declarations the name refers to.
-	std::vector<Declaration const*> m_overloadedDeclarations;
+	std::set<Declaration const*> m_overloadedDeclarations;
 
 	ASTPointer<FunctionCall> m_functionCall;
 };

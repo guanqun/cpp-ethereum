@@ -475,9 +475,12 @@ void BinaryOperation::checkTypeRequirements()
 
 void FunctionCall::checkTypeRequirements()
 {
-	m_expression->checkTypeRequirements();
 	for (ASTPointer<Expression> const& argument: m_arguments)
 		argument->checkTypeRequirements();
+
+	m_expression->checkTypeRequirements();
+
+	// here overload resolver!!!! TODO:
 
 	Type const* expressionType = m_expression->getType().get();
 	if (isTypeConversion())
@@ -603,9 +606,88 @@ void Identifier::checkTypeRequirements()
 		BOOST_THROW_EXCEPTION(createTypeError("Declaration referenced before type could be determined."));
 }
 
+void FunctionIdentifier::overloadResolution()
+{
+	solAssert(!m_overloadedDeclarations.empty(), "FunctionIdentifier not resolved.");
+	solAssert(!m_referencedDeclaration, "Referenced declaration should be null before overload resolution.");
+
+	bool resolved = false;
+	auto const& arguments = getFunctionCall().getArguments();
+	auto const& argumentNames = getFunctionCall().getNames();
+
+	if (argumentNames.empty())
+	{
+		// positional arguments
+		for (auto&& declaration: m_overloadedDeclarations)
+		{
+			auto type = declaration->getType();
+			FunctionType const& functionType = dynamic_cast<FunctionType const&>(*type);
+
+			auto const& parameterTypes = functionType.getParameterTypes();
+
+			if (arguments.size() == parameterTypes.size())
+			{
+				bool ok = true;
+				for (size_t i = 0; ok && i < arguments.size(); i++)
+					if (!functionType.takesArbitraryParameters() &&
+						!arguments[i]->getType()->isImplicitlyConvertibleTo(*parameterTypes[i]))
+						ok = false;
+				if (ok)
+				{
+					if (resolved)
+						BOOST_THROW_EXCEPTION(createTypeError("Ambiguous function call"));
+					resolved = true;
+					setReferencedDeclaration(*declaration);
+				}					
+			}
+		}
+	}
+	else
+	{
+		// named arguments
+		for (auto&& declaration: m_overloadedDeclarations)
+		{
+			auto type = declaration->getType();
+			FunctionType const& functionType = dynamic_cast<FunctionType const&>(*type);
+
+			auto const& parameterTypes = functionType.getParameterTypes();
+			auto const& parameterNames = functionType.getParameterNames();
+
+			// to use named arguments, parameter names can't be omitted
+			if (parameterTypes.size() == parameterNames.size() && parameterTypes.size() == arguments.size())
+			{
+				bool ok = true;
+				for (auto const& parameterName: parameterNames)
+				{
+					bool found = false;
+					for (size_t i = 0; !found && i < argumentNames.size(); i++)
+						if ((found = (parameterName == *argumentNames[i])))
+						{
+							// we found the actual parameter position
+							// positionedArguments.push_back(arguments[i]);								
+						}
+				}
+
+
+			}
+		}
+	}
+
+	if (!resolved)
+		BOOST_THROW_EXCEPTION(createTypeError("Can't resolve identifier"));
+}
+
 void FunctionIdentifier::checkTypeRequirements()
 {
-	solAssert(m_referencedDeclaration, "FunctionIdentifier not resolved.");
+	// all functions
+	// if (std::all_of(m_overloadedDeclarations.cbegin(), m_overloadedDeclarations.cend(),
+	// 				[])
+	// for (auto&& declaration: m_overloadedDeclarations)
+	// {
+
+	// }
+
+	overloadResolution();
 
 	m_lvalue = m_referencedDeclaration->getLValueType();
 	m_type = m_referencedDeclaration->getType(m_currentContract);
