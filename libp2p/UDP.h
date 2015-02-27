@@ -214,9 +214,9 @@ void UDPSocket<Handler, MaxDatagramSize>::doWrite()
 			return disconnectWithError(_ec);
 		else
 		{
-			Guard l(x_sendQ);
-			m_sendQ.pop_front();
-			if (m_sendQ.empty())
+			//Guard l(x_sendQ);
+			//this->m_sendQ.pop_front();
+			//if (m_sendQ.empty())
 				return;
 		}
 		doWrite();

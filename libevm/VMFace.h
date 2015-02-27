@@ -38,7 +38,7 @@ class VMFace
 {
 public:
 	explicit VMFace(u256 _gas): m_gas(_gas) {}
-	virtual ~VMFace() = default;
+	virtual ~VMFace() {}
 	VMFace(VMFace const&) = delete;
 	void operator=(VMFace const&) = delete;
 
